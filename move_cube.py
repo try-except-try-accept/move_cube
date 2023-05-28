@@ -53,6 +53,8 @@ class Box:
         self.d = temp
 
     def move(self, direction):
+        self.reset_location = self.x, self.y, self.d
+        self.last_direction = direction
         if direction == "a":
             self.x -= 1
         elif direction == "d":
@@ -65,8 +67,20 @@ class Box:
             self.z -= 1
         elif direction == "e":
             self.z += 1
+        
+    def reset_position(self):
+        self.x, self.y, self.d = self.reset_location
 
+    def collides_with(self, other):
+
+        if other.y <= self.y <= other.y+other.h or other.y <= self.y+self.h <= other.y+other.h:
+            if other.z <= self.z <= other.z+other.d or other.z <= self.z+self.d <= other.z+other.d:
+                if other.x <= self.x <= other.x+other.w or other.x <= self.x+self.w <= other.x+other.w:
+                    return True
             
+
+        return False
+
     def get_across(self):
         return range(self.x, self.x+self.w+1)
 
@@ -98,10 +112,25 @@ class Model:
     def move_box(self, direction):
         self.boxes[self.selected].move(direction)
 
+    def collision(self):
+        this = self.boxes[self.selected]
+        for other in self.boxes:
+            if this == other:   continue
+
+            if this.collides_with(other):
+                break
+        else:
+            return False
+
+        self.boxes[self.selected].reset_position()
+        return True
+
     def add_box(self):        
         self.boxes.append(Box(*self.get_dims()))
         if model.selected is None:
             model.selected = 0
+        else:
+            model.selected += 1
 
     def rotate(self):
         temp = self.w
@@ -147,6 +176,7 @@ while True:
     if x == "n":
         model.add_box()
         model.display()
+        
     elif x == "q":
         quit()
     else:
@@ -157,6 +187,8 @@ while True:
                 model.select_next()
             elif x in "wasd":
                 model.move_box(x)
+                if model.collision():
+                    continue
                 system("cls")
                 model.display()
             
